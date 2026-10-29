@@ -16,7 +16,6 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        // 1. Configuración inicial del sistema
         MotorNotificaciones motor = new MotorNotificaciones();
         IObservadorAlerta consola = new ObservadorConsola();
         motor.suscribir(consola); 
@@ -30,13 +29,12 @@ public class Main {
         System.out.println("  SISTEMA ADMINISTRATIVO FILEY INICIADO");
         System.out.println("===========================================");
 
-        // 2. Bucle del Menú Interactivo
         while (!salir) {
             System.out.println("\n--- MENÚ PRINCIPAL ---");
             System.out.println("1. Ver estado de los Stands");
-            System.out.println("2. Reservar un Stand (Simulación)");
+            System.out.println("2. Reservar un Stand");
             System.out.println("3. Registrar Pago a un Stand");
-            System.out.println("4. Ejecutar Barrido de Notificaciones");
+            System.out.println("4. Notificaciones");
             System.out.println("5. Salir");
             System.out.print("Seleccione una opción: ");
             
@@ -68,14 +66,12 @@ public class Main {
         scanner.close();
     }
 
-    // --- MÉTODOS DE APOYO PARA EL MENÚ ---
 
     private static List<Stand> inicializarStandsPrueba() {
         List<Stand> lista = new ArrayList<>();
-        // Creamos un par de stands disponibles por defecto
         lista.add(new Stand("A1", 10.0, 1000.0, EstadoStand.DISPONIBLE));
         lista.add(new Stand("B2", 15.0, 1200.0, EstadoStand.DISPONIBLE));
-        lista.add(new Stand("C3", 20.0, 1000.0, EstadoStand.BLOQUEADO)); // Uno bloqueado para pruebas
+        lista.add(new Stand("C3", 20.0, 1000.0, EstadoStand.BLOQUEADO));
         return lista;
     }
 
@@ -115,9 +111,8 @@ public class Main {
         standEncontrado.setEditorialAsignada(nuevaEditorial);
         standEncontrado.setEstado(EstadoStand.RESERVADO);
         
-        // Configuramos fechas simuladas para que el motor lance alertas al probarlo
-        standEncontrado.setLimiteReserva(LocalDateTime.now().plusHours(12)); // Vence pronto
-        standEncontrado.setLimiteProntoPago(LocalDateTime.now().plusDays(1)); // Vence pronto
+        standEncontrado.setLimiteReserva(LocalDateTime.now().plusHours(12));
+        standEncontrado.setLimiteProntoPago(LocalDateTime.now().plusDays(1));
 
         System.out.println("¡Stand reservado exitosamente!");
     }
