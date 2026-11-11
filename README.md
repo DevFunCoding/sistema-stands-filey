@@ -1,5 +1,5 @@
 # Sistema Administrativo de Stands - FILEY
-
+[LINK DE VIDEO PD2](https://drive.google.com/file/d/1kcuci-JcpDX7KbspcyUi8v6dPCTTp9rf/view?usp=sharing)
 ## 1. Requisitos Funcionales Implementados
 
 1. **Gestión de Estados de Stands:**
