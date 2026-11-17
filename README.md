@@ -1,123 +1,100 @@
-# Sistema Administrativo de Stands - FILEY
-[LINK DE VIDEO PD2](https://drive.google.com/file/d/1kcuci-JcpDX7KbspcyUi8v6dPCTTp9rf/view?usp=sharing)
-## 1. Requisitos Funcionales Implementados
+# Sistema Administrativo FILEY
+### Gestión de stands y reservaciones mediante Java, JDBC y MVC
 
-1. **Gestión de Estados de Stands:**
-   - `DISPONIBLE`: Abierto a reservación general.
-   - `BLOQUEADO`: Reservación especial por el administrador. Permite la transición manual a `DISPONIBLE` o la asignación directa a `RESERVADO`.
-   - `RESERVADO`: Asignado a una entidad editorial. Incluye validación de tiempos límite de reserva y aplicación de pronto pago.
-   - `OCUPADO`: Transición de estado automatizada al registrarse un pago que cubra, como mínimo, el 15% del costo total del stand.
-2. **Cálculo de Costos:** Se determina mediante la fórmula: Dimensiones ($m^2$) $\times$ Valor por $m^2$.
-3. **Motor de Notificaciones:** Sistema de evaluación  de fechas límite para la emisión de alertas relacionadas con el vencimiento de reservas, caducidad de pronto pago y fecha máxima de liquidación total.
+Este proyecto consiste en una aplicación de escritorio desarrollada en Java para administrar los stands, las editoriales y las reservaciones de la Feria Internacional de la Lectura Yucatán (FILEY).
+
+El sistema permite llevar un control de los espacios disponibles, registrar editoriales, gestionar reservaciones y dar seguimiento a los pagos realizados. Para almacenar la información se utiliza una base de datos MySQL, conectada mediante JDBC.
+
+El desarrollo está organizado bajo el patrón MVC (Modelo-Vista-Controlador), separando la interfaz gráfica, la lógica del sistema y el acceso a la base de datos. También se implementan otros patrones de diseño, como DAO, Singleton y Observer, para organizar mejor las responsabilidades del programa.
 
 ---
 
-## 2. Arquitectura del Sistema (Diseño por Paquetes)
+## Video de presentación
 
-- `com.filey.datos`: Modelos del dominio (`Stand`, `Editorial`, `EstadoStand`).
-- `com.filey.logica`: Definición de contratos e implementación de las reglas de negocio (`IGestorOperaciones`, `GestorOperacionesImpl`).
-- `com.filey.notificaciones`: Componentes del patrón Observer para el manejo de eventos y alertas (`IObservadorAlerta`, `ObservadorConsola`, `MotorNotificaciones`).
-- `com.filey.main`: Interfaz de usuario interactiva basada en línea de comandos (CLI).
+- **Enlace al video PD4:** https://drive.google.com/file/d/166lBz3rK0SpOkuP6g2O_5-dQiaBAxV4c/view?usp=sharing
 
 ---
 
-## 3. Diagrama de Clases UML
+## Diagrama Entidad-Relación (Base de Datos `filey_db`)
 
-```mermaid
-classDiagram
-    namespace Datos {
-        class EstadoStand {
-            <<enumeration>>
-            DISPONIBLE
-            RESERVADO
-            OCUPADO
-            BLOQUEADO
-        }
-        class Editorial {
-            -String id
-            -String nombre
-            -String emailContacto
-        }
-        class Stand {
-            -String id
-            -double metrosCuadrados
-            -double valorMetroCuadrado
-            -EstadoStand estado
-            -Editorial editorialAsignada
-            -double montoPagado
-            -LocalDateTime limiteReserva
-            -LocalDateTime limiteProntoPago
-            -LocalDateTime limitePagoTotal
-        }
-    }
+![Diagrama Entidad-Relación FILEY](docs/diagrama-er.svg)
 
-    namespace Logica {
-        class IGestorOperaciones {
-            <<interface>>
-            +calcularCostoTotal(Stand) double
-            +registrarPago(Stand, double)
-            +asignarReservaEspecial(Stand, Editorial)
-            +liberarStandBloqueado(Stand)
-        }
-        class GestorOperacionesImpl {
-            +calcularCostoTotal(Stand) double
-            +registrarPago(Stand, double)
-        }
-    }
 
-    namespace Notificaciones {
-        class IObservadorAlerta {
-            <<interface>>
-            +notificar(Editorial, String)
-        }
-        class ObservadorConsola {
-            +notificar(Editorial, String)
-        }
-        class MotorNotificaciones {
-            -List~IObservadorAlerta~ observadores
-            +suscribir(IObservadorAlerta)
-            +desuscribir(IObservadorAlerta)
-            +procesarAlertas(List~Stand~)
-        }
-    }
 
-    Stand --> EstadoStand
-    Stand --> Editorial
-    GestorOperacionesImpl ..|> IGestorOperaciones
-    ObservadorConsola ..|> IObservadorAlerta
-    MotorNotificaciones --> IObservadorAlerta : notifica
+## DIAGRAMA DE CLASES 
+
+El siguiente diagrama muestra la estructura del sistema, sus principales clases y las relaciones entre ellas. Se incluyen las entidades, la capa de persistencia, la lógica de negocio, el sistema de notificaciones y los componentes de MVC.
+
+![Diagrama de clases UML](docs/diagrama-clases.svg)
+
+
+---
+
+## Funcionalidades principales
+
+- **Conexión con MySQL:** El sistema utiliza JDBC para comunicarse con la base de datos. La conexión se administra desde `ConexionDB`, mientras que las consultas se realizan mediante la capa DAO utilizando `PreparedStatement`.
+
+- **Administración de stands:** Permite gestionar los espacios disponibles para la feria, considerando sus dimensiones, el costo por metro cuadrado y su estado actual. Los estados contemplados son `DISPONIBLE`, `RESERVADO`, `OCUPADO` y `BLOQUEADO`.
+
+- **Registro de editoriales:** Mantiene un catálogo de las editoriales participantes, almacenando su identificador, nombre y correo electrónico de contacto.
+
+- **Gestión de reservaciones:** Permite relacionar una editorial con un stand, registrar los pagos parciales y establecer las fechas límite para realizar la reserva, aprovechar el pronto pago y completar la liquidación.
+
+- **Control de pagos y estados:** El costo de cada stand se calcula tomando en cuenta sus dimensiones y el precio por metro cuadrado. Además, cuando los pagos acumulados alcanzan al menos el 15 % del costo total, el estado del stand cambia automáticamente de `RESERVADO` a `OCUPADO`.
+
+- **Operaciones seguras:** Al registrar una reservación se utiliza una transacción para guardar la información y actualizar el estado del stand como una sola operación. Si ocurre algún error, los cambios se revierten mediante `rollback()` para evitar inconsistencias en la base de datos.
+
+- **Sistema de notificaciones:** El programa revisa las fechas importantes de las reservaciones activas para identificar vencimientos relacionados con la reserva, el pronto pago y la liquidación total. Para ello se utiliza el patrón Observer.
+
+- **Interfaz gráfica:** La aplicación cuenta con una interfaz desarrollada en Java Swing, donde se muestran los registros mediante tablas y controles para interactuar con el sistema. La comunicación entre la interfaz y el resto de los componentes se realiza mediante `FileyController`.
+
+## Estructura del proyecto
+
+```text
+filey-pd4/
+├── database/
+│   └── schema.sql                  # Estructura y datos iniciales de la BD
+├── docs/
+│   └── diagrama-clases.png         # Diagrama de clases UML
+├── lib/
+│   └── mysql-connector-j-26.10.0.jar
+├── src/com/filey/
+│   ├── controlador/
+│   │   └── FileyController.java    # Controlador de la aplicación
+│   ├── datos/
+│   │   ├── Editorial.java          # Datos de las editoriales
+│   │   ├── EstadoStand.java        # Estados posibles de un stand
+│   │   ├── Reservacion.java        # Datos de las reservaciones
+│   │   └── Stand.java              # Datos de los stands
+│   ├── logica/
+│   │   ├── GestorOperacionesImpl.java
+│   │   └── IGestorOperaciones.java
+│   ├── main/
+│   │   └── Main.java               # Inicio de la aplicación
+│   ├── notificaciones/
+│   │   ├── IObservadorAlerta.java
+│   │   ├── MotorNotificaciones.java
+│   │   └── ObservadorConsola.java
+│   ├── persistencia/
+│   │   ├── ConexionDB.java         # Administración de la conexión
+│   │   ├── EditorialDAOImpl.java
+│   │   ├── IEditorialDAO.java
+│   │   ├── IReservacionDAO.java
+│   │   ├── IStandDAO.java
+│   │   ├── ReservacionDAOImpl.java # Registro y control de transacciones
+│   │   └── StandDAOImpl.java
+│   └── vista/
+│       └── FileyView.java          # Interfaz gráfica en Swing
+├── run.bat                         # Compilación y ejecución
+└── README.md
 ```
 
----
+## Tecnologías y patrones utilizados
 
-## 4. Instrucciones de Compilación y Ejecución
+- **Lenguaje:** Java.
+- **Interfaz gráfica:** Java Swing.
+- **Base de datos:** MySQL.
+- **Conexión:** JDBC.
+- **Arquitectura:** Modelo-Vista-Controlador (MVC).
+- **Patrones de diseño:** DAO, Singleton y Observer.
 
-Para garantizar la compatibilidad con entornos de ejecución Java 8 o versiones posteriores, es imperativo utilizar el parámetro de compilación correspondiente.
-
-```bash
-# 1. Compilación del código fuente especificando la compatibilidad con Java 8
-javac --release 8 src/com/filey/datos/*.java src/com/filey/logica/*.java src/com/filey/notificaciones/*.java src/com/filey/main/Main.java -d out/
-
-# 2. Ejecución del sistema interactivo
-java -cp out com.filey.main.Main
-```
-
-
-# Requisitos - Sistema FILEY
-
-| ID | Categoría | Requisito | Descripción y Regla de Negocio |
-| :--- | :--- | :--- | :--- |
-| **RF-01** | Costos | Cálculo de precio total | Calcula el costo del stand multiplicando sus metros cuadrados por el valor unitario fijado por metro cuadrado ($Costo = m^2 \times \text{Precio } m^2$). |
-| **RF-02** | Registro | Atributos de cada stand | Almacena el identificador único, dimensiones ($m^2$), costo por $m^2$, estado actual, editorial asignada, abonos acumulados y plazos límite. |
-| **RF-03** | Estados | Ciclo de vida del espacio | Administra el flujo del stand entre los estados válidos: **Disponible**, **Reservado**, **Ocupado** y **Bloqueado**. |
-| **RF-04** | Administración | Gestión de espacios bloqueados | Permite al administrador apartar stands antes del lanzamiento, así como liberarlos a **Disponible** o transferirlos directo a **Reservado** para una editorial específica. |
-| **RF-05** | Regla de Negocio | Regla de ocupación (15%) | Cambia automáticamente el estado del stand de **Reservado** a **Ocupado** en el momento en que los abonos acumulan el 15% o más del costo total. |
-| **RF-06** | Notificaciones | Alertas de reserva | Evalúa los plazos para notificar el vencimiento próximo (menos de 24 horas) o la liberación de la reserva por expiración. |
-| **RF-07** | Notificaciones | Alerta de pronto pago | Avisa a la editorial cuando la fecha límite para aprovechar el descuento por pago anticipado está por caducar. |
-| **RF-08** | Notificaciones | Alerta de fecha límite total | Emite notificaciones preventivas ante la proximidad del plazo para saldar el 100% del costo del espacio. |
-| **RF-09** | Interfaz | Menú interactivo de consola | Provee un menú por terminal para consultar la lista de stands, registrar reservaciones, simular abonos y ejecutar el barrido de notificaciones. |
-| **RNF-01** | Estructura | Organización por paquetes | Divide el código fuente en cuatro paquetes desacoplados: `datos`, `logica`, `notificaciones` y `main`. |
-| **RNF-02** | Arquitectura | Patrón de diseño Observer | Emplea el patrón Observer para separar el motor evaluador de fechas de los observadores encargados de emitir las alertas. |
-| **RNF-03** | Calidad | Principios SOLID | Aplica Responsabilidad Única (SRP) en las entidades y los gestores, e Inversión de Dependencias (DIP) mediante interfaces. |
-| **RNF-04** | Entorno | Compatibilidad de ejecución | Opera en memoria y garantiza la compilación bajo especificaciones de Java 8 mediante la bandera `--release 8`. |
-| **RNF-05** | Control de Versiones | Repositorio GitHub | Gestiona el proyecto con Git y lo aloja en GitHub reflejando el historial de avances con al menos dos confirmaciones (*commits*). |

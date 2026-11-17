@@ -11,6 +11,7 @@ public class Editorial {
         this.emailContacto = emailContacto;
     }
 
+    public String getId() { return id; }
     public String getNombre() { return nombre; }
     public String getEmailContacto() { return emailContacto; }
 }
